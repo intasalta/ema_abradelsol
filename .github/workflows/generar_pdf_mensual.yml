@@ -36,8 +36,8 @@ jobs:
         run: |
           if [ -f "generar_pdf_noaa.py" ]; then
             python generar_pdf_noaa.py
-          elif [ -f "ema_abradelsol/generar_pdf_noaa.py" ]; then
-            cd ema_abradelsol && python generar_pdf_noaa.py && cd ..
+          elif [ -f "abradelsol/generar_pdf_noaa.py" ]; then
+            cd abradelsol && python generar_pdf_noaa.py && cd ..
           else
             SCRIPT=$(find . -name "generar_pdf_noaa.py" | head -n 1)
             DIR=$(dirname "$SCRIPT")
