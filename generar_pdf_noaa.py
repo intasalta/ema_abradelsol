@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-generar_pdf_noaa.py - Versión Estación Meteorológica Automática Abra del SOl
+generar_pdf_noaa.py - Versión Estación Meteorológica Automática Abra del Sol SRL (Pichanal, Salta)
 Convierte el reporte mensual NOAA de Davis Vantage Pro2 (NOAAPRMO.TXT)
 en un informe PDF institucional encolumnado y estilizado.
 También actualiza el archivo historial 'informes.json'.
@@ -49,18 +49,33 @@ def parse_noaa_txt(file_path):
     if not lines:
         raise ValueError("El archivo está vacío.")
 
+    # Valores por defecto para Abra del Sol
     month_code = 'OCT'
     year_str = '2026'
-    station_name = 'Abra del Sol - Pichanal'
-    location_desc = 'Abra del Sol -Pichanal, Salta'
-    elev_str = '1235 msnm'
+    station_name = 'Abra del Sol SRL (Pichanal, Salta)'
+    city_name = 'Pichanal'
+    state_name = 'Salta'
+    elev_str = '317 m'
 
     for line in lines[:10]:
         m = re.search(r'SUMMARY\s+for\s+([A-Za-z]+)\.?\s+(\d{4})', line, re.IGNORECASE)
         if m:
             month_code = m.group(1).upper()
             year_str = m.group(2)
+        
+        m_city = re.search(r'CITY:\s*([^\s]+)', line)
+        if m_city and m_city.group(1).strip():
+            city_name = m_city.group(1).strip()
 
+        m_state = re.search(r'STATE:\s*([^\s]+)', line)
+        if m_state and m_state.group(1).strip():
+            state_name = m_state.group(1).strip()
+
+        m_elev = re.search(r'ELEV:\s*(\d+\s*m)', line)
+        if m_elev:
+            elev_str = m_elev.group(1).strip()
+
+    station_name = f"Abra del Sol SRL ({city_name}, {state_name})" if city_name else "Abra del Sol SRL — Pichanal, Salta"
     month_num, month_name_es = MESES_EN_ES.get(month_code, ('00', month_code))
 
     # Buscar separadores de tabla "----"
@@ -116,7 +131,8 @@ def parse_noaa_txt(file_path):
         'month_num': month_num,
         'month_name': month_name_es,
         'station_name': station_name,
-        'location_desc': location_desc,
+        'city': city_name,
+        'state': state_name,
         'elev': elev_str,
         'rows': table_rows,
         'summary': summary_row,
@@ -126,7 +142,7 @@ def parse_noaa_txt(file_path):
 
 
 def generar_pdf(data, output_pdf_path):
-    """Genera el informe PDF institucional encolumnado y estilizado en 1 página A4 Landscape."""
+    """Genera el informe PDF institucional de Abra del Sol encolumnado y estilizado en 1 página A4 Landscape."""
     doc = SimpleDocTemplate(
         output_pdf_path,
         pagesize=landscape(A4),
@@ -139,7 +155,7 @@ def generar_pdf(data, output_pdf_path):
     styles = getSampleStyleSheet()
     
     # Paleta de colores agroclimática institucional
-    C_NAVY = colors.HexColor('#0f2d59')       # Azul marino institucional INTA
+    C_NAVY = colors.HexColor('#0f2d59')       # Azul marino institucional
     C_BLUE = colors.HexColor('#0284c7')       # Celeste / Sky 600
     C_ZEBRA = colors.HexColor('#f8fafc')      # Fondo fila par
     C_BORDER = colors.HexColor('#cbd5e1')     # Bordes sutiles
@@ -151,22 +167,22 @@ def generar_pdf(data, output_pdf_path):
     header_data = [
         [
             Paragraph(
-                f"<font size='13' color='#0f2d59'><b>INSTITUTO NACIONAL DE TECNOLOGÍA AGROPECUARIA</b></font><br/>"
-                f"<font size='10' color='#0284c7'><b>Estación Davis Vantage Pro2 — {data['station_name']}</b></font><br/>"
-                f"<font size='7.5' color='#64748b'>Red Meteorológica Agropecuaria • {data['location_desc']} • Altitud: {data['elev']}</font>",
+                f"<font size='13' color='#0f2d59'><b>ESTACIÓN METEOROLÓGICA AUTOMÁTICA</b></font><br/>"
+                f"<font size='10' color='#0284c7'><b>Abra del Sol S.R.L. — Davis Vantage Pro2</b></font><br/>"
+                f"<font size='7.5' color='#64748b'>Ruta 34 Km 1334, Pichanal, Salta • Altitud: {data['elev']} • Red de Monitoreo Agroclimático</font>",
                 styles['Normal']
             ),
             Paragraph(
                 f"<div align='right'>"
                 f"<font size='12' color='#0f2d59'><b>INFORME CLIMATOLÓGICO MENSUAL</b></font><br/>"
                 f"<font size='11' color='#d97706'><b>{data['month_name'].upper()} {data['year']}</b></font><br/>"
-                f"<font size='7' color='#64748b'>Generado automáticamente desde registro oficial</font>"
+                f"<font size='7' color='#64748b'>Generado automáticamente desde registro oficial NOAA</font>"
                 f"</div>",
                 styles['Normal']
             )
         ]
     ]
-    t_header = Table(header_data, colWidths=[165 * mm, 112 * mm])
+    t_header = Table(header_data, colWidths=[160 * mm, 117 * mm])
     t_header.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
@@ -190,7 +206,7 @@ def generar_pdf(data, output_pdf_path):
         parent=styles['Normal'],
         fontSize=7,
         leading=8.5,
-        alignment=1,
+        alignment=1, # Centrado
         textColor=C_DARK
     )
 
@@ -326,7 +342,7 @@ def generar_pdf(data, output_pdf_path):
                 styles['Normal']
             ),
             Paragraph(
-                f"<div align='right'><font size='6.2' color='#64748b'>Estación Davis Vantage Pro2 • {data['location_desc']} • INTA</font></div>",
+                f"<div align='right'><font size='6.2' color='#64748b'>Estación Davis Vantage Pro2 • Abra del Sol SRL • Pichanal, Salta</font></div>",
                 styles['Normal']
             )
         ]
