@@ -28,13 +28,14 @@ for file_path in ARCHIVOS_A_CONVERTIR:
     try:
         # Leer el archivo con pandas ignorando las 3 primeras líneas de encabezado desalineadas
         # sep=r'\s+' maneja cualquier cantidad de espacios consecutivos entre columnas
+        # encoding="latin-1" decodifica exactamente los caracteres acentuados de WeatherLink (ANSI/Win-1252)
         df = pd.read_csv(
             file_path,
             sep=r'\s+',
             skiprows=3,
             header=None,
             on_bad_lines='skip',
-            encoding="utf-8",
+            encoding="latin-1",
             engine="python"
         )
         
@@ -56,8 +57,8 @@ for file_path in ARCHIVOS_A_CONVERTIR:
 
     base_name = file_path.rsplit('.', 1)[0]
     
-    # Exportar CSV ordenado
-    df.to_csv(f"{base_name}.csv", index=False, na_rep="")
+    # Exportar CSV ordenado con UTF-8 BOM para apertura perfecta en Excel
+    df.to_csv(f"{base_name}.csv", index=False, na_rep="", encoding="utf-8-sig")
 
     # Exportar Excel formateado
     wb = openpyxl.Workbook()
@@ -68,7 +69,7 @@ for file_path in ARCHIVOS_A_CONVERTIR:
     total_cols = len(df.columns)
     last_col_letter = get_column_letter(total_cols)
     ws.merge_cells(f"A1:{last_col_letter}1")
-    ws["A1"] = f"Reporte Estación Meteorológica - {base_name}"
+    ws["A1"] = f"Estación Meteorológica Abra del Sol SRL - Reporte {base_name.upper()}"
     ws["A1"].font = Font(name="Calibri", size=14, bold=True, color="1F4E78")
 
     # Encabezados en la Fila 3
